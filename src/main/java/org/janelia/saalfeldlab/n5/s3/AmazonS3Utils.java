@@ -1,5 +1,6 @@
 package org.janelia.saalfeldlab.n5.s3;
 
+import com.amazonaws.ClientConfiguration;
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
@@ -7,6 +8,7 @@ import com.amazonaws.auth.AnonymousAWSCredentials;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.regions.Regions;
+import com.amazonaws.retry.PredefinedRetryPolicies;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.AmazonS3URI;
@@ -158,8 +160,10 @@ public class AmazonS3Utils {
 			@Nullable final Regions region) {
 
 		final boolean isAmazon = endpointConfiguration == null || AmazonS3Utils.AWS_ENDPOINT_PATTERN.matcher(endpointConfiguration.getServiceEndpoint()).find();
-		final AmazonS3ClientBuilder builder = AmazonS3ClientBuilder.standard();
 
+		ClientConfiguration s3Conf = new ClientConfiguration().withMaxErrorRetry(32);
+		final AmazonS3ClientBuilder builder = AmazonS3ClientBuilder.standard().withClientConfiguration(s3Conf);
+		
 		if (!isAmazon)
 			builder.withPathStyleAccessEnabled(true);
 
@@ -171,7 +175,7 @@ public class AmazonS3Utils {
 		else if (region != null)
 			builder.withRegion(region);
 		else
-			builder.withRegion("us-east-1");
+			builder.withRegion("us-west-2");
 
 		AmazonS3 s3 = builder.build();
 		// try to listBucket if we are anonymous, if we cannot, don't use anonymous.
